@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
-import type { EstadoCliente, ValoresCliente } from "./actions";
+import type { ValoresCliente } from "@/lib/validacao-cliente";
+import type { EstadoCliente } from "./actions";
 
 type Props = {
   // A Server Action a chamar: criarCliente ou atualizarCliente (já com o id).

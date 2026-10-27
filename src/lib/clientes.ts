@@ -1,6 +1,7 @@
 import "server-only";
 import { getUsuario } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { UUID } from "@/lib/validacao-cliente";
 
 // Formato de um cliente, igual às colunas da tabela em supabase/schema.sql.
 export type Cliente = {
@@ -12,8 +13,6 @@ export type Cliente = {
   user_id: string;
   created_at: string;
 };
-
-export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // Lista os clientes do usuário logado, em ordem alfabética.
 // Não precisamos filtrar por user_id aqui: o RLS do banco já devolve só as

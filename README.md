@@ -73,15 +73,26 @@ Abra [http://localhost:3000](http://localhost:3000). Você será levado à tela 
 | `npm run build` | Gera a versão de produção (também checa tipos) |
 | `npm start` | Roda a versão de produção (depois do build) |
 | `npm run lint` | Procura problemas no código (ESLint) |
+| `npm run typecheck` | Checa os tipos do TypeScript (sem gerar build) |
+| `npm test` | Roda os testes uma vez (Vitest) |
+| `npm run test:watch` | Roda os testes e repete a cada arquivo salvo |
+
+## CI/CD
+
+- **CI (GitHub Actions)**, em [`.github/workflows/ci.yml`](.github/workflows/ci.yml): a cada push na `main` e em todo pull request, roda lint → tipos → testes → build. O resultado aparece na aba **Actions** do GitHub.
+- **CD (Vercel)**: a cada push na `main`, a Vercel faz o build e publica. Pull requests ganham uma URL de preview.
 
 ## Estrutura do projeto
 
 ```
+.github/workflows/ci.yml      Pipeline de CI (GitHub Actions)
+vitest.config.mts             Configuração dos testes
 supabase/schema.sql           Tabela "clientes" + políticas RLS (rodar no SQL Editor)
 src/proxy.ts                  Roda antes de cada página: renova a sessão e barra quem não está logado
 src/lib/supabase/server.ts    Cria o cliente Supabase no servidor (lê/grava a sessão nos cookies)
 src/lib/auth.ts               getUsuario(): quem está logado? (ou redireciona para /login)
 src/lib/clientes.ts           Consultas de leitura (listar, buscar por id)
+src/lib/validacao-cliente.ts  Regras de validação do formulário (+ testes em .test.ts)
 next.config.ts                "/" → redireciona para /clientes (redirects)
 src/app/login/                Tela de login/cadastro + ações entrar, cadastrar, sair
 src/app/auth/callback/        Recebe o link de confirmação do e-mail e cria a sessão
