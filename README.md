@@ -32,10 +32,17 @@ App simples para um pequeno negócio cadastrar seus clientes. Cada usuário faz 
 
 Em **Authentication** → **URL Configuration**:
 
-- **Site URL:** `http://localhost:3000`
-- **Redirect URLs:** adicione `http://localhost:3000/**`
+- **Site URL:** o endereço de produção (ex.: `https://seu-app.vercel.app`), ou `http://localhost:3000` se só for rodar local.
+- **Redirect URLs:** cadastre só os endereços **exatos** do callback, sem curingas (`*`, `**`):
+  - `http://localhost:3000/auth/callback`
+  - `https://seu-app.vercel.app/auth/callback`
 
-Isso permite que o link do e-mail de confirmação volte para o app (rota `/auth/callback`).
+Isso permite que o link do e-mail de confirmação volte para o app (rota `/auth/callback`). Com endereços exatos, o Supabase recusa mandar o usuário para qualquer outro lugar.
+
+Em **Authentication** → **Sign In / Providers** → **Email**:
+
+- **Minimum password length:** `8` (o mesmo mínimo que o app exige).
+- **Prevent use of leaked passwords:** ative, se o seu plano tiver (é recurso do plano Pro). Ele recusa senhas que já apareceram em vazamentos.
 
 > **Dica para testes:** o servidor de e-mail embutido do Supabase envia poucos e-mails por hora. Para testar mais rápido, você pode desligar a confirmação em **Authentication** → **Sign In / Providers** → **Email** → desmarcar **Confirm email**. Com isso, o cadastro já entra direto. Em produção, deixe ligado.
 
@@ -53,6 +60,9 @@ Preencha o `.env.local` com os dados de **Project Settings** → **API Keys** / 
 | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL` | Project URL (ex.: `https://abcd1234.supabase.co`) |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Chave **publishable** (`sb_publishable_...`) ou a antiga **anon** |
+| `NEXT_PUBLIC_SITE_URL` | Endereço do site, sem `/` no final: `http://localhost:3000` local; na Vercel, o domínio de produção |
+
+Na Vercel, cadastre as três em **Settings** → **Environment Variables** e faça um novo deploy (variáveis `NEXT_PUBLIC_` são lidas no build).
 
 > ⚠️ Nunca use a chave **secret** / **service_role** neste app: ela ignora o RLS. O `.env.local` já está no `.gitignore` e não vai para o Git.
 
@@ -111,6 +121,12 @@ src/app/clientes/             Telas de clientes:
 1. **Proxy** (`src/proxy.ts`): quem não está logado nem chega às páginas de `/clientes`.
 2. **Servidor**: cada página e cada ação chamam `getUsuario()` de novo, que valida o token com `getClaims()`.
 3. **Banco (RLS)**: as políticas em `schema.sql` só deixam ler e alterar linhas em que `user_id = auth.uid()`. Essa é a camada que realmente garante o isolamento.
+
+Outros cuidados:
+
+- **Tamanho dos campos** limitado no app (`validacao-cliente.ts`) **e** no banco (CHECKs no `schema.sql`), porque o banco também pode ser chamado direto pela API.
+- **Login e cadastro com mensagens genéricas**: não revelam se um e-mail já tem conta. Deixe **Confirm email** ligado em produção. Com ele desligado, o cadastro de um e-mail existente falha enquanto o de um novo entra direto, e essa diferença já entrega a informação.
+- **Link de confirmação** montado a partir de `NEXT_PUBLIC_SITE_URL`, e não do cabeçalho da requisição, que pode ser forjado.
 
 ## Observações sobre o Next.js 16
 

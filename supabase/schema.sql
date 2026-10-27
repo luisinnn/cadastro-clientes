@@ -21,6 +21,22 @@ create table if not exists public.clientes (
 -- Índice para acelerar a consulta mais comum: "clientes do usuário X".
 create index if not exists clientes_user_id_idx on public.clientes (user_id);
 
+-- Limites de tamanho dos campos opcionais. Impede que alguém logado grave
+-- textos enormes chamando a API direto (sem passar pelo app).
+-- Os mesmos números estão em src/lib/validacao-cliente.ts.
+-- "drop ... if exists" + "add" = pode rodar de novo numa tabela que já existe.
+alter table public.clientes drop constraint if exists clientes_telefone_tamanho;
+alter table public.clientes add constraint clientes_telefone_tamanho
+  check (char_length(telefone) <= 30);
+
+alter table public.clientes drop constraint if exists clientes_email_tamanho;
+alter table public.clientes add constraint clientes_email_tamanho
+  check (char_length(email) <= 254);
+
+alter table public.clientes drop constraint if exists clientes_observacoes_tamanho;
+alter table public.clientes add constraint clientes_observacoes_tamanho
+  check (char_length(observacoes) <= 2000);
+
 -- 2) Liga o RLS (Row Level Security).
 -- Com RLS ligado e SEM políticas, ninguém lê nada. As políticas abaixo
 -- abrem acesso só às linhas cujo user_id é o do usuário logado.

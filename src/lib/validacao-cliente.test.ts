@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { NOME_MAX, UUID, validarCliente } from "./validacao-cliente";
+import {
+  EMAIL_MAX,
+  NOME_MAX,
+  OBSERVACOES_MAX,
+  TELEFONE_MAX,
+  UUID,
+  validarCliente,
+} from "./validacao-cliente";
 
 // Monta um FormData igual ao que o navegador envia ao salvar o formulário.
 function form(campos: Record<string, string>) {
@@ -59,6 +66,26 @@ describe("validarCliente", () => {
   it(`aceita nome com exatamente ${NOME_MAX} caracteres e rejeita com ${NOME_MAX + 1}`, () => {
     expect(validarCliente(form({ nome: "a".repeat(NOME_MAX) })).erro).toBeUndefined();
     expect(validarCliente(form({ nome: "a".repeat(NOME_MAX + 1) })).erro).toMatch(/no máximo/);
+  });
+
+  it.each([
+    ["telefone", TELEFONE_MAX, "1".repeat(TELEFONE_MAX)],
+    ["observacoes", OBSERVACOES_MAX, "x".repeat(OBSERVACOES_MAX)],
+  ])("aceita %s com até %i caracteres e rejeita acima disso", (campo, _max, noLimite) => {
+    expect(validarCliente(form({ nome: "X", [campo]: noLimite })).erro).toBeUndefined();
+    expect(validarCliente(form({ nome: "X", [campo]: noLimite + "1" })).erro).toMatch(
+      /no máximo/,
+    );
+  });
+
+  it(`aceita e-mail com ${EMAIL_MAX} caracteres e rejeita com ${EMAIL_MAX + 1}`, () => {
+    const dominio = "@exemplo.com";
+    const noLimite = "a".repeat(EMAIL_MAX - dominio.length) + dominio;
+
+    expect(validarCliente(form({ nome: "X", email: noLimite })).erro).toBeUndefined();
+    expect(validarCliente(form({ nome: "X", email: "a" + noLimite })).erro).toBe(
+      `O e-mail pode ter no máximo ${EMAIL_MAX} caracteres.`,
+    );
   });
 
   it.each(["sem-arroba", "a@b", "a @b.com", "@b.com"])("rejeita e-mail inválido: %s", (email) => {

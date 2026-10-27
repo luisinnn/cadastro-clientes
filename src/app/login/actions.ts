@@ -2,7 +2,6 @@
 // "use server" = estas funções rodam SÓ no servidor. O formulário no navegador
 // chama a função, mas o código (e as chaves) nunca vão para o navegador.
 
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
@@ -38,25 +37,60 @@ export async function entrar(
   redirect("/clientes");
 }
 
+// Mesmo valor do minLength em form-login.tsx e da senha mínima no painel do
+// Supabase (Authentication > Sign In / Providers > Email).
+const SENHA_MIN = 8;
+
+// Endereço oficial do site, usado no link de confirmação do e-mail.
+// Vem de variável de ambiente, e não do cabeçalho "origin" da requisição,
+// porque esse cabeçalho pode ser forjado por quem chama.
+function urlDoSite(): string | null {
+  const configurada = process.env.NEXT_PUBLIC_SITE_URL;
+  if (configurada) return configurada.replace(/\/+$/, ""); // tira "/" do final
+
+  // Na Vercel: domínio de produção do projeto, preenchido pela própria Vercel.
+  const vercel = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  if (vercel) return `https://${vercel}`;
+
+  // Rodando local (npm run dev) sem a variável.
+  if (process.env.NODE_ENV === "development") return "http://localhost:3000";
+
+  return null;
+}
+
 export async function cadastrar(
   _estadoAnterior: EstadoAuth,
   formData: FormData,
 ): Promise<EstadoAuth> {
   const { email, senha } = lerCampos(formData);
   if (!email || !senha) return { erro: "Preencha e-mail e senha." };
-  if (senha.length < 6) return { erro: "A senha precisa ter pelo menos 6 caracteres." };
+  if (senha.length < SENHA_MIN)
+    return { erro: `A senha precisa ter pelo menos ${SENHA_MIN} caracteres.` };
 
-  // Endereço do site (ex.: http://localhost:3000), usado no link de confirmação.
-  const origin = (await headers()).get("origin") ?? "http://localhost:3000";
+  const site = urlDoSite();
+  if (!site) {
+    console.error("cadastrar: defina NEXT_PUBLIC_SITE_URL nas variáveis de ambiente.");
+    return { erro: "Cadastro indisponível no momento. Tente mais tarde." };
+  }
 
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
     email,
     password: senha,
-    options: { emailRedirectTo: `${origin}/auth/callback` },
+    options: { emailRedirectTo: `${site}/auth/callback` },
   });
 
-  if (error) return { erro: error.message };
+  if (error) {
+    // Senha fraca ou vazada (proteção do painel do Supabase): pode avisar,
+    // porque isso fala da senha digitada, não de quem já tem conta.
+    if (error.code === "weak_password") {
+      return { erro: "Senha fraca ou já vazada em outros sites. Escolha outra." };
+    }
+    // Qualquer outro erro: mensagem genérica de propósito. O texto original
+    // pode dizer "usuário já cadastrado" e revelar quais e-mails existem.
+    console.error("cadastrar:", error.code ?? error.message);
+    return { erro: "Não foi possível criar a conta. Confira os dados e tente de novo." };
+  }
 
   // Se a confirmação de e-mail estiver DESLIGADA no Supabase, já vem sessão.
   if (data.session) redirect("/clientes");

@@ -2,7 +2,13 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
-import type { ValoresCliente } from "@/lib/validacao-cliente";
+import {
+  EMAIL_MAX,
+  NOME_MAX,
+  OBSERVACOES_MAX,
+  TELEFONE_MAX,
+  type ValoresCliente,
+} from "@/lib/validacao-cliente";
 import type { EstadoCliente } from "./actions";
 
 type Props = {
@@ -26,17 +32,17 @@ export function FormCliente({ acao, inicial = {}, textoBotao }: Props) {
     <form action={formAction} className="space-y-4">
       <label className="block">
         <span className="text-sm font-medium text-zinc-700">Nome *</span>
-        <input name="nome" required maxLength={200} defaultValue={v.nome ?? ""} className={campo} />
+        <input name="nome" required maxLength={NOME_MAX} defaultValue={v.nome ?? ""} className={campo} />
       </label>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block">
           <span className="text-sm font-medium text-zinc-700">Telefone</span>
-          <input name="telefone" type="tel" defaultValue={v.telefone ?? ""} className={campo} />
+          <input name="telefone" type="tel" maxLength={TELEFONE_MAX} defaultValue={v.telefone ?? ""} className={campo} />
         </label>
         <label className="block">
           <span className="text-sm font-medium text-zinc-700">E-mail</span>
-          <input name="email" type="email" defaultValue={v.email ?? ""} className={campo} />
+          <input name="email" type="email" maxLength={EMAIL_MAX} defaultValue={v.email ?? ""} className={campo} />
         </label>
       </div>
 
@@ -45,6 +51,7 @@ export function FormCliente({ acao, inicial = {}, textoBotao }: Props) {
         <textarea
           name="observacoes"
           rows={4}
+          maxLength={OBSERVACOES_MAX}
           defaultValue={v.observacoes ?? ""}
           className={campo}
         />

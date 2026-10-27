@@ -18,7 +18,20 @@ export type DadosCliente = {
 
 export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Tamanhos máximos. Os mesmos números estão nos CHECKs de supabase/schema.sql:
+// se mudar aqui, mude lá também.
 export const NOME_MAX = 200;
+export const TELEFONE_MAX = 30;
+export const EMAIL_MAX = 254; // limite do padrão de e-mail
+export const OBSERVACOES_MAX = 2000;
+
+const LIMITES: { campo: keyof ValoresCliente; rotulo: string; max: number }[] = [
+  { campo: "nome", rotulo: "O nome", max: NOME_MAX },
+  { campo: "telefone", rotulo: "O telefone", max: TELEFONE_MAX },
+  { campo: "email", rotulo: "O e-mail", max: EMAIL_MAX },
+  { campo: "observacoes", rotulo: "As observações", max: OBSERVACOES_MAX },
+];
 
 // Lê e valida os campos do formulário. Nunca confie só na validação do
 // navegador: qualquer um pode mandar uma requisição sem passar pela tela.
@@ -38,9 +51,13 @@ export function validarCliente(formData: FormData): {
 
   let erro: string | undefined;
   if (!valores.nome) erro = "O nome é obrigatório.";
-  else if (valores.nome.length > NOME_MAX)
-    erro = `O nome pode ter no máximo ${NOME_MAX} caracteres.`;
-  else if (valores.email && !EMAIL.test(valores.email)) erro = "E-mail inválido.";
+
+  for (const { campo, rotulo, max } of LIMITES) {
+    if (erro) break;
+    if (valores[campo].length > max) erro = `${rotulo} pode ter no máximo ${max} caracteres.`;
+  }
+
+  if (!erro && valores.email && !EMAIL.test(valores.email)) erro = "E-mail inválido.";
 
   const dados: DadosCliente = {
     nome: valores.nome,

@@ -45,7 +45,7 @@ export function FormLogin() {
             name="senha"
             type="password"
             required
-            minLength={6}
+            minLength={ehEntrar ? undefined : 8}
             autoComplete={ehEntrar ? "current-password" : "new-password"}
             className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-blue-500 focus:outline-none"
           />
