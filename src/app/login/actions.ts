@@ -86,6 +86,11 @@ export async function cadastrar(
     if (error.code === "weak_password") {
       return { erro: "Senha fraca ou já vazada em outros sites. Escolha outra." };
     }
+    // Limite de tentativas/e-mails do Supabase: também pode avisar, porque
+    // vale para qualquer e-mail (não revela quem tem conta).
+    if (error.code === "over_email_send_rate_limit" || error.code === "over_request_rate_limit") {
+      return { erro: "Muitas tentativas agora. Tente de novo mais tarde." };
+    }
     // Qualquer outro erro: mensagem genérica de propósito. O texto original
     // pode dizer "usuário já cadastrado" e revelar quais e-mails existem.
     console.error("cadastrar:", error.code ?? error.message);
